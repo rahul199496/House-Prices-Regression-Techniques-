@@ -1,0 +1,207 @@
+getwd()
+house_pricing<-read.csv("C:/Users/Rahul/Documents/ATI-MOHIT-ANALYTICS/House Pricing Regression/train.csv", header = T)
+house_pricing
+lot_area<-house_pricing$LotArea
+sale_price<-house_pricing$SalePrice
+options(scipen = 999)
+plot(lot_area,sale_price, main = "scatter plot of lot area and sale price")
+plot(lot_area,sale_price)
+
+boxplot(lot_area,sale_price)
+
+
+overal_quality<-house_pricing$OverallQual
+overal_rating<-house_pricing$OverallCond
+hist(house_pricing$OverallQual)
+hist(overal_rating)
+
+str(house_pricing)
+
+
+year_built<-house_pricing$YearBuilt
+hist(year_built)
+
+
+year_remodel<-house_pricing$YearRemodAdd
+hist(year_remodel)
+
+
+
+
+basement_type1<-house_pricing$BsmtFinSF1
+hist(basement_type1)
+
+
+basement_type2<-house_pricing$BsmtFinSF2
+hist(basement_type2)
+
+
+
+
+basement_unf<-house_pricing$BsmtUnfSF
+hist(basement_unf)
+
+
+
+total_basement<-house_pricing$TotalBsmtSF
+hist(total_basement)
+
+
+
+first_floor<-house_pricing$X1stFlrSF
+hist(first_floor)
+
+
+second_floor<-house_pricing$X2ndFlrSF
+hist(second_floor)
+
+
+
+gr_live_area<-house_pricing$GrLivArea
+hist(gr_live_area)
+
+
+central_air<-table(house_pricing$CentralAir)
+
+barplot(central_air)
+
+
+
+basement_full_bathroom<-table(house_pricing$BsmtFullBath)
+barplot(basement_full_bathroom)
+table(house_pricing$BsmtFullBath)
+
+
+
+
+basement_half_bathroom<-table(house_pricing$BsmtHalfBath)
+barplot(basement_half_bathroom)
+
+
+
+bedrooom_abv_basemnt<-table(house_pricing$BedroomAbvGr)
+barplot(bedrooom_abv_basemnt)
+
+
+
+#### new
+library(proxy)
+
+
+?simil
+simil(house_pricing,by_rows = TRUE)
+View(house_pricing)
+
+install.packages("DMwR")
+library(DMwR)
+knnOutput <- knnImputation(house_pricing[, !names(house_pricing) %in% "medv"])  # perform knn imputation.
+anyNA(knnOutput)
+
+knnout<-knnImputation(house_pricing, scale = T, meth = "weighAvg", distData = NA)
+
+
+
+?knnImputation
+
+
+
+
+summary(house_pricing$SalePrice)
+
+upper_outlier<- 214000+1.5*(214000-130000)
+upper_outlier
+
+
+nrow(house_pricing[house_pricing$SalePrice>340000,])/nrow(house_pricing)
+
+
+str(house_pricing)
+
+library(VIM)
+?kNN
+?kNN(VIM)
+??kNN()
+
+library(psych)
+pairs.panels(house_pricing[c("LotFrontage","LotArea","Street","Neighborhood")])
+
+install.packages("VIM")
+library(VIM)
+library(caret)
+set.seed(3456)
+trainIndex<-createDataPartition(house_pricing$SalePrice, p= 0.7, list = F, times = 1)
+trainIndex
+house_pricing_train<-house_pricing[trainIndex,]
+house_pricing_train
+
+house_pricing_test<-house_pricing[-trainIndex,]
+house_pricing_test
+
+house_model<-lm(sale_price~ ., data = house_pricing_train)
+
+
+
+library(VIM)
+
+missing_values<- kNN(house_pricing, k=6)
+missing_values
+miss_values<-subset(missing_values, select =  Id:SalePrice)
+miss_values
+str(miss_values)
+View(miss_values)
+summary(miss_values)
+
+
+summary(miss_values$SalePrice)
+214000+1.5*(214000-130000)
+
+
+#proportion of outlierr values
+nrow(miss_values[miss_values$SalePrice > 340000,])/nrow(miss_values)
+
+
+plot(miss_values$SalePrice)
+hist(miss_values$SalePrice)
+
+
+
+
+
+library(psych)
+pairs.panels(miss_values[c("LotFrontage","LotArea","LotShape","Utilities","Neighborhood","Condition1","HouseStyle","Electrical","GarageType","SalePrice")])
+library(caret)
+set.seed(2017)
+trainInd<-createDataPartition(miss_values$SalePrice, p= 0.7, times = 1, list = F)
+trainInd
+house_train<-miss_values[trainInd,]
+house_train
+str(house_train)
+house_test<-miss_values[-trainInd,]
+house_test
+View(house_test)
+
+
+
+house_model<-lm(SalePrice ~ LotFrontage + LotArea + LotShape + Utilities + Neighborhood + Condition1 + HouseStyle + Electrical + GarageType , data = house_train)
+
+#house_model<-lm(SalePrice ~ . , data = house_train)
+
+house_model
+
+
+options(scipen = 999)
+summary(house_model)
+
+plot(house_model)
+
+library(MASS)
+house_model1<- stepAIC(house_model)
+summary(house_model1)
+
+
+model_predicted<-predict(house_model1, house_test[,-81])
+house_test$predictedvalues<-model_predicted
+
+house_train$pred.price<-predict(house_model1, newdata = subset(house_train, select = c(SalePrice,LotFrontage,LotArea,LotShape,Utilities,Neighborhood,Condition1,HouseStyle,Electrical,GarageType )))
+house_test$pred.price<-predict(house_model1, newdata = subset(house_test, select = c(SalePrice,LotFrontage,LotArea,LotShape,Utilities,Neighborhood,Condition1,HouseStyle,Electrical,GarageType)))
+
